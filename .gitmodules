@@ -1,0 +1,8 @@
+[submodule "sim"]
+	path = sim
+	url = git@github.com:racarla96/caddy_ai2_ros2_sim.git
+	branch = jazzy
+[submodule "robot"]
+	path = robot
+	url = git@github.com:racarla96/caddy_ai2_ros2_robot.git
+	branch = jazzy
