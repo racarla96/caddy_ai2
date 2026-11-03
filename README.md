@@ -1,6 +1,6 @@
 # Caddy AI2
 
-Repositorio general del proyecto **Caddy AI2** (robot agrícola, proyecto CERVAREC). Reúne bajo un único punto de entrada la **simulación** y el **vehículo real**; cada parte vive en su propio repositorio y se incluye aquí como submódulo git.
+Repositorio general del proyecto **Caddy AI2** (carrito de golf eléctrico usado como plataforma de pruebas de vehículos, proyecto CERVAREC). Reúne bajo un único punto de entrada la **simulación** y el **vehículo real**; cada parte vive en su propio repositorio y se incluye aquí como submódulo git.
 
 **ROS 2:** Jazzy | **Plataforma:** Ubuntu 24.04 | **Simulador:** Gazebo Harmonic
 
