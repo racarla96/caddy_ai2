@@ -37,7 +37,9 @@ Estado: 2026-11-09. Sustituye a `PLAN_robot_real.md` y `PLAN_sim_nav2.md` de `ca
 | `control_system_traction_driver` | — | ✓ | Ídem + TODOs del driver (signo RPM, `prefix`, temporización) (A.2) |
 | Sensores SICK, YDLidar, SBG | ✓ | ✓ | Validar IMU NED→ENU en real; SBG da también GPS (desactivar `navsat_generic` en real) |
 | `sensors_navsat_generic` | ✗ | ✓ | Decidir si `sim` lo necesita |
-| `sensors_rs_helios_5515`, `camera_zed_2i`, `imu_vectornav_vn100` | ✓ | ✗ | Integrar en `robot` (ZED en Jetson/contenedor) |
+| `sensors_rs_helios_5515`, `camera_zed_2i` | ✓ | ✗ | Integrar en `robot_perception` (Jetson, contenedor) |
+| `imu_vectornav_vn100` | ✓ | ✗ | Decidir si va en el robot real y en qué ordenador |
+| GPS u-blox | ✗ | ✗ | Crear paquete (Jetson) |
 | `localization`, `navigation` | ✓ | ✗ | Integrar en `robot` cuando haya robot real autónomo |
 | `automatic_brake_system` | — | ✗ | Revisar en Jazzy, README, release (A.3) |
 | `plc_schneider_tm241ce40t` | — | ✗ | Driver + simulador de PLC y luces (A.4) |
@@ -65,15 +67,24 @@ Estado: 2026-11-09. Sustituye a `PLAN_robot_real.md` y `PLAN_sim_nav2.md` de `ca
 - [ ] `display.launch.py` con argumento `mode: sim|robot`.
 - [ ] **Variantes del vehículo (a decidir):** con PLC y sin PLC. Propuesta: argumento `use_plc` (o `config/with_plc/` y `config/no_plc/`). Tiene que caber el bicycle controller, el orquestador y el watchdog.
 
-### Fase C — `robot` como workspace repo
+### Fase C — `robot` dividido en dos subrepos (por ordenador)
 
-**Decisión pendiente:** `sim` usa submódulos y `robot` usa `.repos`. Propuesta: unificar en **submódulos** (el paraguas fija las versiones y no hay dos mecanismos), como ya preveía el plan de junio.
+El vehículo tiene dos ordenadores, así que `robot` deja de ser un único workspace y pasa a ser un paraguas con dos subrepos:
 
-- [ ] Pasar `robot` a submódulos en `src/`; paquete de integración en `src/caddy_ai2_ros2_robot/`; `.gitignore` de `build/ install/ log/`.
-- [ ] `robot.launch.py`: `robot_state_publisher`, `controller_manager`, controladores, sensores, ABS. Argumentos: `namespace`, `prefix`, `use_rviz`, `use_abs`, `use_plc`, `use_joy`.
-- [ ] `controllers.yaml.j2` unificado; calibración de dirección (`counts_per_radian`, `abs_zero_position`, `gain_inc_to_abs`) en un fichero de calibración dedicado.
-- [ ] Mover configuración de controladores de los drivers a `robot` y `sim`.
-- [ ] Eliminar `bringup/` y `description/urdf/` standalone de los drivers (dejar solo el fragmento `ros2_control`).
+| Subrepo (nombre propuesto) | Ordenador | Contenido |
+|---|---|---|
+| `caddy_ai2_ros2_robot_lowlevel` | **LattePanda Alpha** (control de bajo nivel) | `steering_driver`, `traction_driver`, SICK LMS 291, PLC Schneider, SBG IG-500N (IMU), `common`, adaptadores bicycle→ackermann, controladores, ABS |
+| `caddy_ai2_ros2_robot_perception` (antes previsto `caddy_ai2_ros2_zedbox_sensors`) | **Jetson Orin NX** (percepción, en contenedor Docker) | GPS u-blox propio, lidar 3D (Helios RS-5515), las dos ZED 2i |
+
+- [ ] Crear los dos subrepos, cada uno como workspace con submódulos en `src/` (mismo patrón que `sim`), y `caddy_ai2_ros2_robot` pasa a ser el paraguas de ambos.
+- [ ] Cada subrepo con su `robot.launch.py` propio y su `package.xml`. El de percepción en un contenedor (imágenes en Docker Hub, `racarla96`).
+- [ ] Nuevo paquete `caddy_ai2_ros2_sensors_gps_ublox` (hoy no existe repo): driver u-blox + fragmento de descripción.
+- [ ] **Conflicto de GPS:** el SBG (LattePanda) y el u-blox (Jetson) publican posición. Decidir cuál alimenta la localización y poner `navsat` en un solo topic activo (o ambos con nombres distintos).
+- [ ] Comunicación entre los dos ordenadores: mismo `ROS_DOMAIN_ID` y red, o zenoh; definir qué topics cruzan (scans, nubes, imágenes, referencia de control).
+- [ ] `robot_description` único: el URDF del robot real se renderiza igual en ambos ordenadores; cada uno lanza solo los sensores que tiene (`robot_params.yaml` con un campo `host: lattepanda|jetson`).
+- [ ] Migrar de `.repos` a submódulos (decisión abierta 1).
+- [ ] `controllers.yaml.j2` unificado y calibración de dirección en un fichero dedicado (solo LattePanda).
+- [ ] Mover configuración de controladores de los drivers a `lowlevel` y `sim`; eliminar `bringup/` y `description/urdf/` standalone de los drivers.
 
 ### Fase D — Simulación (MVSim)
 
@@ -115,14 +126,14 @@ A.6 metadatos  ‖  A.1/A.2 drivers  ‖  A.3/A.4/A.5
         ↓
 Validación HW (bicycle controller)
         ↓
-B (URDF robot real) → C (robot como workspace) → G (validación)
+B (URDF robot real) → C (robot en dos subrepos: lowlevel + perception) → G (validación)
         ↓
 D, E, F, H en paralelo según haya hardware disponible
 ```
 
 ## 6. Decisiones abiertas
 
-1. ¿`robot` con submódulos (propuesto) o `.repos`?
+1. ¿Los dos subrepos con submódulos (propuesto) o `.repos`? ¿Nombres `robot_lowlevel` / `robot_perception` correctos?
 2. ¿Variante con/sin PLC por argumento de launch o por carpeta de configuración?
 3. ¿`siyi_mk15`, `control_watchdog`, `teleop_radio_esp32_bridge` y `control_system_bicycle_controller` entran en el sistema o se archivan?
 4. ¿`sim` incluye `navsat_generic`?
