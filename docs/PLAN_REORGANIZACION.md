@@ -80,7 +80,7 @@ El vehículo tiene dos ordenadores, así que `robot` deja de ser un único works
 - [x] Crear los dos subrepos, cada uno como workspace con submódulos en `src/` (mismo patrón que `sim`), y `caddy_ai2_ros2_robot` pasa a ser el paraguas de ambos.
 - [ ] Cada subrepo con su `robot.launch.py` propio y su `package.xml`. El de percepción en un contenedor (imágenes en Docker Hub, `racarla96`).
 - [ ] Nuevo paquete `caddy_ai2_ros2_sensors_gps_ublox` (hoy no existe repo): driver u-blox + fragmento de descripción.
-- [x] **Posición/GPS:** hay **tres fuentes** que conviven, cada una con su topic: el GPS del SBG IG-500N (LattePanda), el u-blox (Jetson) y el de la ZED (Jetson). Qué fuente(s) entran en el EKF de `localization` se decide al probarlas en el vehículo. `navsat_generic` (solo simulación) queda desactivado en real.
+- [x] **Posición/GPS:** hay **tres fuentes** que conviven, cada una con su topic: el GPS del SBG IG-500N (LattePanda), el u-blox (Jetson) y el GNSS integrado de la **ZED Box** (la Jetson Orin NX es una ZED Box de Stereolabs). Qué fuente(s) entran en el EKF de `localization` se decide al probarlas en el vehículo. `navsat_generic` (solo simulación) queda desactivado en real.
 - [x] **Red:** los dos ordenadores están en la misma red, así que no hace falta zenoh: mismo `ROS_DOMAIN_ID` y descubrimiento DDS. Pendiente: fijar el RMW y la interfaz de red (por ejemplo CycloneDDS con `NetworkInterface` explícita), limitar qué información cruza entre los dos equipos (los topics pesados, nube Helios e imágenes ZED, no tienen por qué salir de la Jetson salvo los que consuma el LattePanda), que los topics pesados (nube Helios, imágenes ZED) no saturen el enlace, y **sincronizar la hora** entre los dos equipos (chrony), imprescindible para TF y fusión de sensores.
 - [ ] `robot_description` único: el URDF del robot real se renderiza igual en ambos ordenadores; cada uno lanza solo los sensores que tiene (`robot_params.yaml` con un campo `host: lattepanda|jetson`).
 - [x] Migrar de `.repos` a submódulos (hecho en ambos subrepos).
@@ -97,7 +97,7 @@ El vehículo tiene dos ordenadores, así que `robot` deja de ser un único works
 
 ### Fase E — Jetson Orin NX y sensores de percepción
 
-- [ ] Actualizar el SO de la Jetson a **Ubuntu 24.04** con ROS 2 Jazzy. Antes (junio) el plan era dejar JetPack 6.2 / Ubuntu 22.04 y usar un contenedor con Jazzy; verificar que existe un JetPack/L4T para Orin NX con Ubuntu 24.04 y que el ZED SDK y los drivers lo soportan antes de reflashear. Si no, mantener el contenedor.
+- [ ] Actualizar el SO de la Jetson a **Ubuntu 24.04** con ROS 2 Jazzy. La Jetson es una **ZED Box Orin NX** de Stereolabs (viene con JetPack y GNSS de fábrica): comprobar con Stereolabs qué versiones de SO admite y si reflashear afecta a la garantía o al GNSS integrado. Antes (junio) el plan era dejar JetPack 6.2 / Ubuntu 22.04 y usar un contenedor con Jazzy; verificar que existe un JetPack/L4T para Orin NX con Ubuntu 24.04 y que el ZED SDK y los drivers lo soportan antes de reflashear. Si no, mantener el contenedor.
 - [ ] Instalar drivers y paquetes ROS 2 de: **Robosense Helios 5515 (RS-H32F70)** (lidar 3D), **VectorNav VN-100** (IMU) y **ZED 2i** (dos cámaras). El VN-100 va en la Jetson (`robot_perception`).
 - [ ] Contenedor Docker o instalación nativa según el punto anterior (imágenes en Docker Hub, `racarla96`).
 - [ ] **Demo de las cámaras en la simulación** (cuando estén integradas en la simulación del laboratorio) y, a partir de ella, planificar cómo montarlas en el vehículo real (disposición A o B, medidas de la barra).
