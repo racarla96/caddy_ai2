@@ -97,9 +97,9 @@ El vehículo tiene dos ordenadores, así que `robot` deja de ser un único works
 
 ### Fase E — Jetson Orin NX y sensores de percepción
 
-- [ ] Actualizar el SO de la Jetson a **Ubuntu 24.04** con ROS 2 Jazzy. La Jetson es una **ZED Box Orin NX** de Stereolabs (viene con JetPack y GNSS de fábrica): comprobar con Stereolabs qué versiones de SO admite y si reflashear afecta a la garantía o al GNSS integrado. Antes (junio) el plan era dejar JetPack 6.2 / Ubuntu 22.04 y usar un contenedor con Jazzy; verificar que existe un JetPack/L4T para Orin NX con Ubuntu 24.04 y que el ZED SDK y los drivers lo soportan antes de reflashear. Si no, mantener el contenedor.
+- [ ] Actualizar el SO de la **ZED Box Orin NX** a **Ubuntu 24.04** con ROS 2 Jazzy: la actualización ya está disponible, solo hay que hacerla. Antes, copia de seguridad de la configuración actual (ZED SDK, calibraciones de las cámaras y ajustes del GNSS integrado) y después comprobar que el GNSS sigue funcionando.
 - [ ] Instalar drivers y paquetes ROS 2 de: **Robosense Helios 5515 (RS-H32F70)** (lidar 3D), **VectorNav VN-100** (IMU) y **ZED 2i** (dos cámaras). El VN-100 va en la Jetson (`robot_perception`).
-- [ ] Contenedor Docker o instalación nativa según el punto anterior (imágenes en Docker Hub, `racarla96`).
+- [ ] Instalación nativa de Jazzy en Ubuntu 24.04 (el contenedor Docker queda como alternativa si algún driver no lo permite).
 - [ ] **Demo de las cámaras en la simulación** (cuando estén integradas en la simulación del laboratorio) y, a partir de ella, planificar cómo montarlas en el vehículo real (disposición A o B, medidas de la barra).
 - [ ] Reconciliar los frames ópticos del wrapper real con los `<frame_id>_optical` del URDF.
 - [ ] Probar `zed_2i.launch.py` con `serial_number` en las dos cámaras.
