@@ -80,8 +80,8 @@ El vehículo tiene dos ordenadores, así que `robot` deja de ser un único works
 - [x] Crear los dos subrepos, cada uno como workspace con submódulos en `src/` (mismo patrón que `sim`), y `caddy_ai2_ros2_robot` pasa a ser el paraguas de ambos.
 - [ ] Cada subrepo con su `robot.launch.py` propio y su `package.xml`. El de percepción en un contenedor (imágenes en Docker Hub, `racarla96`).
 - [ ] Nuevo paquete `caddy_ai2_ros2_sensors_gps_ublox` (hoy no existe repo): driver u-blox + fragmento de descripción.
-- [ ] **Conflicto de GPS:** el SBG (LattePanda) y el u-blox (Jetson) publican posición. Decidir cuál alimenta la localización y poner `navsat` en un solo topic activo (o ambos con nombres distintos).
-- [ ] Comunicación entre los dos ordenadores: mismo `ROS_DOMAIN_ID` y red, o zenoh; definir qué topics cruzan (scans, nubes, imágenes, referencia de control).
+- [x] **GPS:** el SBG IG-500N tiene su propio GPS (LattePanda) y la Jetson lleva un u-blox: **conviven los dos**, cada uno con su topic (`sbg_ig500n/navsat` y `ublox/navsat`), sin conflicto. Qué fuente(s) entran en el EKF de `localization` se decide al probarlos en el vehículo. En `robot_params.yaml`, `navsat_generic` (solo simulación) queda desactivado en real.
+- [x] **Red:** los dos ordenadores están en la misma red, así que no hace falta zenoh: mismo `ROS_DOMAIN_ID` y descubrimiento DDS. Pendiente: fijar el RMW y la interfaz de red (por ejemplo CycloneDDS con `NetworkInterface` explícita), que los topics pesados (nube Helios, imágenes ZED) no saturen el enlace, y **sincronizar la hora** entre los dos equipos (chrony), imprescindible para TF y fusión de sensores.
 - [ ] `robot_description` único: el URDF del robot real se renderiza igual en ambos ordenadores; cada uno lanza solo los sensores que tiene (`robot_params.yaml` con un campo `host: lattepanda|jetson`).
 - [x] Migrar de `.repos` a submódulos (hecho en ambos subrepos).
 - [ ] `controllers.yaml.j2` unificado y calibración de dirección en un fichero dedicado (solo LattePanda).
