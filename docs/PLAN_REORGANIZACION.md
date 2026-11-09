@@ -39,8 +39,8 @@ Estado: 2026-11-09. Sustituye a `PLAN_robot_real.md` y `PLAN_sim_nav2.md` de `ca
 | Sensores SICK, YDLidar, SBG | ✓ | ✓ | Validar IMU NED→ENU en real; SBG da también GPS (desactivar `navsat_generic` en real) |
 | `sensors_navsat_generic` | ✗ | ✓ | Decidir si `sim` lo necesita |
 | `sensors_rs_helios_5515`, `camera_zed_2i` | ✓ | ✗ | Integrar en `robot_perception` (Jetson, contenedor) |
-| `imu_vectornav_vn100` | ✓ | ✗ | Decidir si va en el robot real y en qué ordenador |
-| GPS u-blox | ✗ | ✗ | Crear paquete (Jetson) |
+| `imu_vectornav_vn100` | ✓ | ✓ (perception) | Instalar en la Jetson |
+| GPS u-blox | ✗ | ✗ | Comprar (Mouser), crear paquete (Jetson) |
 | `localization`, `navigation` | ✓ | ✗ | Integrar en `robot` cuando haya robot real autónomo |
 | `automatic_brake_system` | — | ✗ | Revisar en Jazzy, README, release (A.3) |
 | `plc_schneider_tm241ce40t` | — | ✗ | Driver + simulador de PLC y luces (A.4) |
@@ -66,7 +66,7 @@ Estado: 2026-11-09. Sustituye a `PLAN_robot_real.md` y `PLAN_sim_nav2.md` de `ca
 
 - [ ] URDF para hardware real que extienda el modelo base e inyecte los `hardware.urdf.j2` de steering y traction y los sensores (sin Gazebo).
 - [ ] `display.launch.py` con argumento `mode: sim|robot`.
-- [ ] **Variantes del vehículo (a decidir):** con PLC y sin PLC. Propuesta: argumento `use_plc` (o `config/with_plc/` y `config/no_plc/`). Tiene que caber el bicycle controller, el orquestador y el watchdog.
+- [x] **Variantes:** no hay variante sin PLC; el vehículo real siempre lleva PLC. Tiene que caber el bicycle controller, el orquestador y el watchdog.
 
 ### Fase C — `robot` dividido en dos subrepos (por ordenador)
 
@@ -80,8 +80,8 @@ El vehículo tiene dos ordenadores, así que `robot` deja de ser un único works
 - [x] Crear los dos subrepos, cada uno como workspace con submódulos en `src/` (mismo patrón que `sim`), y `caddy_ai2_ros2_robot` pasa a ser el paraguas de ambos.
 - [ ] Cada subrepo con su `robot.launch.py` propio y su `package.xml`. El de percepción en un contenedor (imágenes en Docker Hub, `racarla96`).
 - [ ] Nuevo paquete `caddy_ai2_ros2_sensors_gps_ublox` (hoy no existe repo): driver u-blox + fragmento de descripción.
-- [x] **GPS:** el SBG IG-500N tiene su propio GPS (LattePanda) y la Jetson lleva un u-blox: **conviven los dos**, cada uno con su topic (`sbg_ig500n/navsat` y `ublox/navsat`), sin conflicto. Qué fuente(s) entran en el EKF de `localization` se decide al probarlos en el vehículo. En `robot_params.yaml`, `navsat_generic` (solo simulación) queda desactivado en real.
-- [x] **Red:** los dos ordenadores están en la misma red, así que no hace falta zenoh: mismo `ROS_DOMAIN_ID` y descubrimiento DDS. Pendiente: fijar el RMW y la interfaz de red (por ejemplo CycloneDDS con `NetworkInterface` explícita), que los topics pesados (nube Helios, imágenes ZED) no saturen el enlace, y **sincronizar la hora** entre los dos equipos (chrony), imprescindible para TF y fusión de sensores.
+- [x] **Posición/GPS:** hay **tres fuentes** que conviven, cada una con su topic: el GPS del SBG IG-500N (LattePanda), el u-blox (Jetson) y el de la ZED (Jetson). Qué fuente(s) entran en el EKF de `localization` se decide al probarlas en el vehículo. `navsat_generic` (solo simulación) queda desactivado en real.
+- [x] **Red:** los dos ordenadores están en la misma red, así que no hace falta zenoh: mismo `ROS_DOMAIN_ID` y descubrimiento DDS. Pendiente: fijar el RMW y la interfaz de red (por ejemplo CycloneDDS con `NetworkInterface` explícita), limitar qué información cruza entre los dos equipos (los topics pesados, nube Helios e imágenes ZED, no tienen por qué salir de la Jetson salvo los que consuma el LattePanda), que los topics pesados (nube Helios, imágenes ZED) no saturen el enlace, y **sincronizar la hora** entre los dos equipos (chrony), imprescindible para TF y fusión de sensores.
 - [ ] `robot_description` único: el URDF del robot real se renderiza igual en ambos ordenadores; cada uno lanza solo los sensores que tiene (`robot_params.yaml` con un campo `host: lattepanda|jetson`).
 - [x] Migrar de `.repos` a submódulos (hecho en ambos subrepos).
 - [ ] `controllers.yaml.j2` unificado y calibración de dirección en un fichero dedicado (solo LattePanda).
@@ -95,11 +95,15 @@ El vehículo tiene dos ordenadores, así que `robot` deja de ser un único works
 - [ ] Paridad sim ↔ robot: mismos topics y frames; smoke test (publicar referencia, comprobar `joint_states`).
 - [ ] Arreglar EasyNav en Gazebo: **aparcado** con la descontinuación.
 
-### Fase E — Cámaras en hardware real
+### Fase E — Jetson Orin NX y sensores de percepción
 
-- [ ] Contenedor Docker para el Jetson Orin NX / ZED Box (repo orquestador previsto `caddy_ai2_ros2_zedbox_sensors`).
+- [ ] Actualizar el SO de la Jetson a **Ubuntu 24.04** con ROS 2 Jazzy. Antes (junio) el plan era dejar JetPack 6.2 / Ubuntu 22.04 y usar un contenedor con Jazzy; verificar que existe un JetPack/L4T para Orin NX con Ubuntu 24.04 y que el ZED SDK y los drivers lo soportan antes de reflashear. Si no, mantener el contenedor.
+- [ ] Instalar drivers y paquetes ROS 2 de: **Robosense Helios 5515 (RS-H32F70)** (lidar 3D), **VectorNav VN-100** (IMU) y **ZED 2i** (dos cámaras). El VN-100 va en la Jetson (`robot_perception`).
+- [ ] Contenedor Docker o instalación nativa según el punto anterior (imágenes en Docker Hub, `racarla96`).
+- [ ] **Demo de las cámaras en la simulación** (cuando estén integradas en la simulación del laboratorio) y, a partir de ella, planificar cómo montarlas en el vehículo real (disposición A o B, medidas de la barra).
 - [ ] Reconciliar los frames ópticos del wrapper real con los `<frame_id>_optical` del URDF.
 - [ ] Probar `zed_2i.launch.py` con `serial_number` en las dos cámaras.
+- [ ] **Compra en Mouser:** GPS u-blox y lo que haga falta de paso (antena, cable, conversor serie/USB, alimentación; revisar lista tras elegir el modelo).
 
 ### Fase F — Seguridad y puesta en marcha
 
@@ -135,7 +139,7 @@ D, E, F, H en paralelo según haya hardware disponible
 ## 6. Decisiones abiertas
 
 1. ~~Submódulos o `.repos` en `robot`~~: resuelto, submódulos.
-2. ¿Variante con/sin PLC por argumento de launch o por carpeta de configuración?
+2. ~~Variante con/sin PLC~~: resuelto, siempre con PLC.
 3. ¿`siyi_mk15`, `control_watchdog`, `teleop_radio_esp32_bridge` y `control_system_bicycle_controller` entran en el sistema o se archivan?
 4. ¿`sim` incluye `navsat_generic`?
 5. ¿`caddy_ai2_ros2_navigation` y `localization` entran también en `robot`?
