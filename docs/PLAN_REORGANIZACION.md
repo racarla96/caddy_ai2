@@ -25,6 +25,7 @@ Estado: 2026-11-09. Sustituye a `PLAN_robot_real.md` y `PLAN_sim_nav2.md` de `ca
 - [x] Paquete SICK renombrado a `caddy_ai2_ros2_sensors_sick_lms_291` y referencias actualizadas.
 - [x] `robot`: nombres corregidos y `.repos` completo (11 repos).
 - [x] Punteros de `sim` y del paraguas actualizados.
+- [x] `robot` dividido en `caddy_ai2_ros2_robot_lowlevel` (LattePanda) y `caddy_ai2_ros2_robot_perception` (Jetson), ambos privados y compilando desde un clon limpio; `robot` es ahora su paraguas.
 
 ## 3. Estado de los paquetes
 
@@ -76,13 +77,13 @@ El vehículo tiene dos ordenadores, así que `robot` deja de ser un único works
 | `caddy_ai2_ros2_robot_lowlevel` | **LattePanda Alpha** (control de bajo nivel) | `steering_driver`, `traction_driver`, SICK LMS 291, PLC Schneider, SBG IG-500N (IMU), `common`, adaptadores bicycle→ackermann, controladores, ABS |
 | `caddy_ai2_ros2_robot_perception` (antes previsto `caddy_ai2_ros2_zedbox_sensors`) | **Jetson Orin NX** (percepción, en contenedor Docker) | GPS u-blox propio, lidar 3D (Helios RS-5515), las dos ZED 2i |
 
-- [ ] Crear los dos subrepos, cada uno como workspace con submódulos en `src/` (mismo patrón que `sim`), y `caddy_ai2_ros2_robot` pasa a ser el paraguas de ambos.
+- [x] Crear los dos subrepos, cada uno como workspace con submódulos en `src/` (mismo patrón que `sim`), y `caddy_ai2_ros2_robot` pasa a ser el paraguas de ambos.
 - [ ] Cada subrepo con su `robot.launch.py` propio y su `package.xml`. El de percepción en un contenedor (imágenes en Docker Hub, `racarla96`).
 - [ ] Nuevo paquete `caddy_ai2_ros2_sensors_gps_ublox` (hoy no existe repo): driver u-blox + fragmento de descripción.
 - [ ] **Conflicto de GPS:** el SBG (LattePanda) y el u-blox (Jetson) publican posición. Decidir cuál alimenta la localización y poner `navsat` en un solo topic activo (o ambos con nombres distintos).
 - [ ] Comunicación entre los dos ordenadores: mismo `ROS_DOMAIN_ID` y red, o zenoh; definir qué topics cruzan (scans, nubes, imágenes, referencia de control).
 - [ ] `robot_description` único: el URDF del robot real se renderiza igual en ambos ordenadores; cada uno lanza solo los sensores que tiene (`robot_params.yaml` con un campo `host: lattepanda|jetson`).
-- [ ] Migrar de `.repos` a submódulos (decisión abierta 1).
+- [x] Migrar de `.repos` a submódulos (hecho en ambos subrepos).
 - [ ] `controllers.yaml.j2` unificado y calibración de dirección en un fichero dedicado (solo LattePanda).
 - [ ] Mover configuración de controladores de los drivers a `lowlevel` y `sim`; eliminar `bringup/` y `description/urdf/` standalone de los drivers.
 
@@ -133,7 +134,7 @@ D, E, F, H en paralelo según haya hardware disponible
 
 ## 6. Decisiones abiertas
 
-1. ¿Los dos subrepos con submódulos (propuesto) o `.repos`? ¿Nombres `robot_lowlevel` / `robot_perception` correctos?
+1. ~~Submódulos o `.repos` en `robot`~~: resuelto, submódulos.
 2. ¿Variante con/sin PLC por argumento de launch o por carpeta de configuración?
 3. ¿`siyi_mk15`, `control_watchdog`, `teleop_radio_esp32_bridge` y `control_system_bicycle_controller` entran en el sistema o se archivan?
 4. ¿`sim` incluye `navsat_generic`?
