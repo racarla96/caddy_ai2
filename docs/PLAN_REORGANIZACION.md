@@ -97,8 +97,12 @@ El vehículo tiene dos ordenadores, así que `robot` deja de ser un único works
 
 ### Fase E — Jetson Orin NX y sensores de percepción
 
-- [ ] Actualizar el SO de la **ZED Box Orin NX** a **Ubuntu 24.04** con ROS 2 Jazzy: la actualización ya está disponible, solo hay que hacerla. Antes, copia de seguridad de la configuración actual (ZED SDK, calibraciones de las cámaras y ajustes del GNSS integrado) y después comprobar que el GNSS sigue funcionando.
+- [x] ~~Actualizar el SO de la **ZED Box Orin NX** a **Ubuntu 24.04** con ROS 2 Jazzy~~ (hecho; nativo, sin contenedor). Antes, copia de seguridad de la configuración actual (ZED SDK, calibraciones de las cámaras y ajustes del GNSS integrado) y después comprobar que el GNSS sigue funcionando.
 - [ ] Instalar drivers y paquetes ROS 2 de: **Robosense Helios 5515 (RS-H32F70)** (lidar 3D), **VectorNav VN-100** (IMU) y **ZED 2i** (dos cámaras). El VN-100 va en la Jetson (`robot_perception`).
+  - [x] **Helios 5515:** compila en la ZED Box (aarch64, Ubuntu 24.04, Jazzy nativo, ~1 min) y recibe del LiDAR real (IP fija `192.168.1.102/24` en `enP8p1s0`). Nube de 57 600 puntos, `frame_id` correcto, **10,00 Hz con suscriptor `reliable`**; CPU del driver ~40 % de un núcleo. Probado con `test.launch.py` (driver + RViz + `cloud_rate_monitor`).
+  - [ ] **Aviso para los consumidores de la nube:** un suscriptor `best_effort` (p. ej. `SensorDataQoS`) recibe solo 6-7 Hz por pérdida en DDS con nubes de este tamaño. Usar `reliable` o ajustar Fast DDS; repetir la medida entre ZED Box y LattePanda (ligado al RMW y la red de arriba).
+  - [ ] VN-100, ZED SDK y las dos ZED 2i, y chrony, siguen pendientes.
+  - Acceso a la ZED Box: WiFi UPVNET (perfil creado, autoconexión) y `192.168.55.1` por USB. Pendiente instalar Tailscale.
 - [ ] Instalación nativa de Jazzy en Ubuntu 24.04 (el contenedor Docker queda como alternativa si algún driver no lo permite).
 - [ ] **Demo de las cámaras en la simulación** (cuando estén integradas en la simulación del laboratorio) y, a partir de ella, planificar cómo montarlas en el vehículo real (disposición A o B, medidas de la barra).
 - [ ] Reconciliar los frames ópticos del wrapper real con los `<frame_id>_optical` del URDF.
